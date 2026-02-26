@@ -155,7 +155,7 @@ class EnsembleKalmanFilter(object):
       Dynamic Systems. CRC Press, second edition. 2012. pp, 257-9.
     """
 
-    def __init__(self, x, P, dim_z, dt, N, hx, fx):
+    def __init__(self, x, P, dim_z, dt, N, hx, fx, inflation=0.0):
         if dim_z <= 0:
             raise ValueError('dim_z must be greater than zero')
 
@@ -172,6 +172,8 @@ class EnsembleKalmanFilter(object):
         self.K = zeros((dim_x, dim_z))
         self.z = array([[None] * self.dim_z]).T
         self.S = zeros((dim_z, dim_z))   # system uncertainty
+
+        self.inflation = inflation
 
         self.initialize(x, P)
         self.Q = eye(dim_x)       # process uncertainty
@@ -283,6 +285,8 @@ class EnsembleKalmanFilter(object):
 
         self.x = np.mean(self.sigmas, axis=0)
         X = self.sigmas - self.x
+        self.sigmas = self.x + self.inflation * X  # add multiplicative inflation 
+
         self.P = X.T @ X / (N - 1)
 
         # save prior
