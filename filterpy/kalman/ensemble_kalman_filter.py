@@ -172,7 +172,6 @@ class EnsembleKalmanFilter(object):
         self.K = zeros((dim_x, dim_z))
         self.z = array([[None] * self.dim_z]).T
         self.S = zeros((dim_z, dim_z))   # system uncertainty
-        self.SI = zeros((dim_z, dim_z))  # inverse system uncertainty
 
         self.initialize(x, P)
         self.Q = eye(dim_x)       # process uncertainty
@@ -257,15 +256,15 @@ class EnsembleKalmanFilter(object):
             self.sigmas - self.x, sigmas_h - z_mean) / (N - 1)
 
         self.S = P_zz
-        self.SI = self.inv(self.S)
-        self.K = dot(P_xz, self.SI)
+        self.K = np.linalg.solve(self.S.T, P_xz.T).T
 
         e_r = multivariate_normal(self._mean_z, R, N)
         for i in range(N):
             self.sigmas[i] += dot(self.K, z + e_r[i] - sigmas_h[i])
 
         self.x = np.mean(self.sigmas, axis=0)
-        self.P = self.P - dot(dot(self.K, self.S), self.K.T)
+        X = self.sigmas - self.x
+        self.P = X.T @ X / (N - 1)
 
         # save measurement and posterior state
         self.z = deepcopy(z)
@@ -283,7 +282,8 @@ class EnsembleKalmanFilter(object):
         self.sigmas += e
 
         self.x = np.mean(self.sigmas, axis=0)
-        self.P = outer_product_sum(self.sigmas - self.x) / (N - 1)
+        X = self.sigmas - self.x
+        self.P = X.T @ X / (N - 1)
 
         # save prior
         self.x_prior = np.copy(self.x)
