@@ -285,7 +285,7 @@ class EnsembleKalmanFilter(object):
 
         self.x = np.mean(self.sigmas, axis=0)
         X = self.sigmas - self.x
-        self.sigmas = self.x + self.inflation * X  # add multiplicative inflation 
+        self.sigmas = self.x + (1. + self.inflation) * X  # add multiplicative inflation 
 
         self.P = X.T @ X / (N - 1)
 
